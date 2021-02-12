@@ -1,0 +1,12 @@
+.leftCard {
+  padding: 0px;
+  margin-right: 0.5%;
+  margin-left: 0.5%;
+  width: 49%;
+}
+
+.rightCard {
+  padding: 0px;
+  margin-left: 0.5%;
+  width: 49%;
+}
