@@ -5,12 +5,8 @@ pragma experimental ABIEncoderV2;
 
 
 abstract contract Notional {
-    function getMarketRates() external virtual returns (uint32[] memory);
     function getCurrentCashTofCash(uint32 maturity, uint128 fCashAmount) external virtual returns (uint128);
     function getfCashToCurrentCash(uint32 maturity, uint128 fCashAmount) external virtual returns (uint128);
-
-    function getActiveMaturities() external virtual returns (uint32[] memory);
-
 
         // Defines the fields for each market in each maturity.
     struct Market {
@@ -28,6 +24,8 @@ abstract contract Notional {
         // This is the implied rate that we use to smooth the anchor rate between trades.
         uint32 lastImpliedRate;
     }
+    function getMarket(uint32 maturity) external virtual returns (Market memory);
+
 }
 
 
@@ -69,7 +67,7 @@ contract Gravel {
 
     uint32 public notionalBestYield;
 
-    uint256 public bestYield;
+    uint32 public bestYield;
 
     uint32 public notionalAprilBestYield;
     uint32 public notionalJulyBestYield;
@@ -83,17 +81,46 @@ contract Gravel {
     //If True, yield is best; else notional
     bool public yieldIsBest;
 
-    //100000000000000000
+    uint256 public normalizedCashApr;
+    uint256 public normalizedCashJul;
+
+    uint256 public fCashApr;
+    uint256 public fCashJul;
+
+    uint256 public AprImpliedRate;
+    uint256 public JulImpliedRate;
+
+    uint256 public AnnualAprImpliedRate;
+    uint256 public AnnualJulImpliedRate;
+
+    uint256 public NotExpectedAprReturn;
+    uint256 public NotExpectedJulReturn;
+    enum best{
+        NOAPR,
+        NOJUL,
+        YIMAR,
+        YIJUN
+    }
+    function bestOrder(uint128 daiIn, uint128 amount) public {
+        getBest(daiIn, amount);
+
+    }
+    /// @notice Given the amount of fCash put into a market, how much yield at the current block.
+    /// @param daiIn: the amount of Dai to lend out to the Yield protocol
+    /// @param amount: the amount of Dai to lend out to the Notional protocol
+    /// @return the enum-like value that represents the best APY rate lending protocol.
     // Step 1. Establish Yield's Yield/Second
     // Step 2. Yield/Second * Notional remaining maturity
     // Step 3. Multiply times principal and normalize value
     // Step 4. getCurrentCashTofCash(value)
     // Step 5. if return < principal, Yield > notional
     //NA:2.55%, NJ:10%, YM:7.5%. YJ:6.50%
-    function GetBest(uint128 daiIn, uint128 amount) public returns(uint256){
+    function getBest(uint128 daiIn, uint128 amount) public returns(uint32){
 
-        uint256 normalizedCashApr;
-        uint256 normalizedCashJul;
+
+        bestYield = 0;
+        daiIn = daiIn*1e18;
+        amount = amount*1e18;
 
         uint256 timeDiffApr =  1617408000 - block.timestamp;
         uint256 timeDiffJul =  1625184000 - block.timestamp;
@@ -110,63 +137,78 @@ contract Gravel {
         (yieldMarSelect, yieldBestYield) = (yieldMarBestYield>yieldJunBestYield ? (true, yieldMarBestYield):(false, yieldJunBestYield));
 
         //Notional Principle*(Notional Remaining Maturity) * (Yield's Yield/Second)
-        normalizedCashApr = ((amount*timeDiffApr)*yieldBestYield*1e26/31536000)/1e9;
-        normalizedCashJul = ((amount*timeDiffJul)*yieldBestYield*1e26/31536000)/1e9;
+        normalizedCashApr = ((amount*timeDiffApr)*(yieldBestYield/1e11)*1e26/31536000)/1e26;
+        normalizedCashJul = ((amount*timeDiffJul)*(yieldBestYield/1e11)*1e26/31536000)/1e26;
 
-        //Best
-        //Need to use each individual maturity normalized amt for each getCurrentCashtofCash
-        //normalizedBestYield = (normalizedCashAprYield>normalizedCashJulYield ? normalizedCashAprYield:normalizedCashJulYield);
         //Step 4. getCurrentCashTofCash(value)
 
         currentCashtofCashApril = notional.getCurrentCashTofCash(1617408000, uint128(normalizedCashApr));
         currentCashtofCashJuly = notional.getCurrentCashTofCash(1625184000, uint128(normalizedCashJul));
 
-        (notionalAprSelect, bestNotional) = (currentCashtofCashApril>currentCashtofCashJuly? (true, currentCashtofCashApril):( false, currentCashtofCashJuly));
+        fCashApr = notional.getCurrentCashTofCash(1617408000, uint128(amount));
+        fCashJul = notional.getCurrentCashTofCash(1625184000, uint128(amount));
 
+        AprImpliedRate= notional.getMarket(1617408000).lastImpliedRate;
+        JulImpliedRate= notional.getMarket(1625184000).lastImpliedRate;
+
+        AnnualAprImpliedRate = AprImpliedRate*(31536000*1e26/timeDiffApr)/1e26;
+        AnnualJulImpliedRate = JulImpliedRate*(31536000*1e26/timeDiffJul)/1e26;
+
+        NotExpectedAprReturn = (AprImpliedRate*amount);
+        NotExpectedJulReturn = (JulImpliedRate*amount);
+
+        (notionalAprSelect, bestNotional) = (currentCashtofCashApril>currentCashtofCashJuly? (true, currentCashtofCashApril):( false, currentCashtofCashJuly));
+        // NOAPR, = 1
+        // NOJUL, = 2
+        // YIMAR, = 3
+        // YIJUN  = 4
         if (notionalAprSelect)
         {
-            if(bestNotional<currentCashtofCashApril)
+            if(bestNotional<normalizedCashApr)
             {
-                yieldIsBest = true;
+                if (yieldMarSelect)
+                {
+                    bestYield = 3;
+                }
+                else
+                {
+                    bestYield = 4;
+                }
 
             }
             else
             {
-                yieldIsBest = false;
+                bestYield = 1;
+
             }
 
         }
         else
         {
-            if(bestNotional>currentCashtofCashJuly)
+            if(bestNotional<normalizedCashJul)
             {
-                yieldIsBest = true;
+                if (yieldMarSelect)
+                {
+                    bestYield = 3;
+                }
+                else
+                {
+                    bestYield = 4;
+                }
 
             }
             else
             {
-                yieldIsBest = false;
+                bestYield = 2;
             }
-
         }
-        //TODO: Figure out which APY to return. Yield APY available. Notional APY is not.
-        //bestYield = (bestNotional>amount?:bestNotional/amount:yieldBestYield);
-        //notionalBestYield
-
-        //bestYield = (yieldBestYield>notionalBestYield? yieldBestYield:notionalBestYield);
 
         return bestYield;
     }
 
-    //PoC Function
-    // Expected: 7.64%
-    // Actual: 7.411%
-    // Actual: 35057658552965739912496
-    /// @notice
-    /// @return
-    // Maths:
-    //  ((31536000)/(1617235199-1612664008))*
-    //  ((101074285681244585-100000000000000000)/100000000000000000)
+    /// @notice Given the amount of Dai put into a market, what is the expected APY for Yield protocol
+    /// @param daiIn: amount of Dai to lend on the Yield protocol with a maturity set to March.
+    /// @return the APY for Yield protocol with a maturity set to March
     function yieldMar(uint128 daiIn) public returns(uint256){
         Yield yield = Yield(0x08cc239a994A10118CfdeEa9B849C9c674C093d3);
 
@@ -186,18 +228,13 @@ contract Gravel {
         return yield21Mar31AnnualizedYield;
     }
 
-    //PoC Function
-    // Expected: 6.64%
-    // Actual: 6.52%
-    // Actual: 34122264113541816985302
-    /// @notice
-    /// @return
+    /// @notice Given the amount of Dai put into a market, what is the expected APY for Yield protocol
+    /// @param daiIn: amount of Dai to lend on the Yield protocol with a maturity set to March.
+    /// @return the APY for Yield protocol with a maturity set to June, with 1e13 decimal precision
     function yieldJun(uint128 daiIn) public returns(uint256){
         Yield yield = Yield(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA);
 
-        //1625097599
         yield21Jun30Maturity = yield.maturity();
-        //102572958812182081
         yield21Jun30Return = yield.sellDaiPreview(daiIn);
 
         uint256 returnDifference  =  yield21Jun30Return - daiIn;
