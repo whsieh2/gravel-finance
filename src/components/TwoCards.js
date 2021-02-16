@@ -3,7 +3,9 @@ import { Card, Row, InputNumber, Select, Button, Space } from "antd";
 import 'antd/dist/antd.css';
 import './index.css';
 import 'antd/lib/style/themes/default.less';
-
+import swivel from '../img/logo.png';
+import notional from '../img/notional.png';
+import yieldImg from '../img/yield.png';
 
 export function TwoCards({
   approveStakeFunds,
@@ -61,6 +63,12 @@ export function TwoCards({
       await getBest(stakeAmount.toString());
       //console.log('After',getBest.toString());
   };
+
+  // const approveDai = async () => {
+  //     console.log('approveDai');
+  //     await approveDai();
+  //     //console.log('After',getBest.toString());
+  // };
 
   const handleStake = async () => {
     if (stakeAmount > 0) {
@@ -132,13 +140,12 @@ export function TwoCards({
               </span>
             </p>
             <h5 style={{textAlign:'left', margin:40}}>
-              <b>Best Rate Service</b>
-              <span style={{float:'right'}}>
-                {bestYield}
-              </span>
+              <b>Best Fixed Rate</b>
+
+
             </h5>
             <div style={{ display: 'flex', justifyContent: 'center'}}>
-
+                            <img src={bestYield} width = "175px"></img>
             </div>
           </Card>
           <Card
@@ -147,20 +154,17 @@ export function TwoCards({
             bordered={true}
           >
             <h4 style={{textAlign:'center'}}>Lending Protocols</h4>
-            <p style={{textAlign:'center', margin:40}}>
-              <b><a href="https://notional.finance/" target="_blank">Notional</a></b>
+            <p style={{textAlign:'center', margin:55}}>
+              <b><a href="https://notional.finance/" target="_blank"><img src={notional} width = "175px"></img></a></b>
             </p>
             <p style={{textAlign:'center', margin:40}}>
-              <b><a href="https://yield.is/" target="_blank">Yield</a></b>
+              <b><a href="https://yield.is/" target="_blank"><img src={yieldImg} width = "125px"></img></a></b>
             </p>
             <p style={{textAlign:'center', margin:40}}>
-              <b><a href="https://swivel.finance/" target="_blank">Swivel</a></b>
+              <b><a href="https://swivel.finance/" target="_blank"><img src={swivel} width = "150px"></img></a></b>
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 25}}>
               <InputNumber style={{ height: 32 }} min={0} defaultValue={0} onChange={handleNumberChange} />
-              <Select defaultValue={stakeToken} style={{ width: 75}} onChange={handleTokenChange}>
-                <Option value="DAI">DAI</Option>
-              </Select>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center'}}>
               <Button

@@ -15,7 +15,7 @@ export function ConnectWallet({ connectWallet, networkError, dismiss }) {
         background: '#cbd5e0',
       }}
     >
-    <div className="container"style={{ backgroundColor: '#cbd5e0' }}>
+    <div className="container"style={{ backgroundColor: '#cbd5e0', top: 500 }}>
       <div className="row justify-content-md-center">
         <div className="col-12 text-center">
           {/* Metamask network should be set to Localhost:8545. */}
@@ -26,7 +26,7 @@ export function ConnectWallet({ connectWallet, networkError, dismiss }) {
             />
           )}
         </div>
-        <div className="col-6 p-4 text-center">
+        <div className="col-6 p-4 text-center" style={{ top: 200 }}>
           <h3>Welcome to Gravel!</h3>
           <p></p>
           <p>Begin by connecting to your Wallet</p>

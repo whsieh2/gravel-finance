@@ -25,7 +25,7 @@ abstract contract Notional {
         uint32 lastImpliedRate;
     }
     function getMarket(uint32 maturity) external virtual returns (Market memory);
-
+    function takefCash(uint32 maturity, uint128 fCashAmount, uint32 maxTime, uint128 minImpliedRate) external virtual returns (uint128);
 }
 
 
@@ -33,10 +33,22 @@ abstract contract Yield {
     function buyFYDaiPreview(uint128 fyDaiOut) external virtual returns(uint128);
     function getFYDaiReserves() external virtual returns(uint128);
     function sellDaiPreview(uint128 daiIn) external virtual returns(uint128);
+    function sellDai(address from, address to, uint128 daiIn) external virtual returns(uint128);
     uint128 public maturity;
 
 }
 
+abstract contract Erc20 {
+	function approve(address, uint) virtual external returns (bool);
+	function transfer(address, uint) virtual external returns (bool);
+	function balanceOf(address _owner) virtual external returns (uint256 balance);
+	function transferFrom(address sender, address recipient, uint256 amount) virtual public returns (bool);
+}
+
+abstract contract Erc1155 {
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) virtual external;
+    function setApprovalForAll(address _operator, bool _approved) virtual external;
+}
 
 contract Gravel {
     //Contract address goes into the () below. Main next
@@ -101,13 +113,10 @@ contract Gravel {
         YIMAR,
         YIJUN
     }
-    function bestOrder(uint128 daiIn, uint128 amount) public {
-        getBest(daiIn, amount);
-
-    }
+    uint128 public  returnme;
+    uint128 public shouldbe;
     /// @notice Given the amount of fCash put into a market, how much yield at the current block.
     /// @param daiIn: the amount of Dai to lend out to the Yield protocol
-    /// @param amount: the amount of Dai to lend out to the Notional protocol
     /// @return the enum-like value that represents the best APY rate lending protocol.
     // Step 1. Establish Yield's Yield/Second
     // Step 2. Yield/Second * Notional remaining maturity
@@ -115,12 +124,14 @@ contract Gravel {
     // Step 4. getCurrentCashTofCash(value)
     // Step 5. if return < principal, Yield > notional
     //NA:2.55%, NJ:10%, YM:7.5%. YJ:6.50%
-    function getBest(uint128 daiIn, uint128 amount) public returns(uint32){
-
-
+    function getBest(uint128 daiIn) public returns(uint32){
         bestYield = 0;
+
         daiIn = daiIn*1e18;
-        amount = amount*1e18;
+
+
+        Erc20 _erc20 = Erc20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
+        _erc20.transferFrom(msg.sender, address(this), daiIn);
 
         uint256 timeDiffApr =  1617408000 - block.timestamp;
         uint256 timeDiffJul =  1625184000 - block.timestamp;
@@ -137,16 +148,16 @@ contract Gravel {
         (yieldMarSelect, yieldBestYield) = (yieldMarBestYield>yieldJunBestYield ? (true, yieldMarBestYield):(false, yieldJunBestYield));
 
         //Notional Principle*(Notional Remaining Maturity) * (Yield's Yield/Second)
-        normalizedCashApr = ((amount*timeDiffApr)*(yieldBestYield/1e11)*1e26/31536000)/1e26;
-        normalizedCashJul = ((amount*timeDiffJul)*(yieldBestYield/1e11)*1e26/31536000)/1e26;
+        normalizedCashApr = ((daiIn*timeDiffApr)*(yieldBestYield/1e11)*1e26/31536000)/1e26;
+        normalizedCashJul = ((daiIn*timeDiffJul)*(yieldBestYield/1e11)*1e26/31536000)/1e26;
 
         //Step 4. getCurrentCashTofCash(value)
 
         currentCashtofCashApril = notional.getCurrentCashTofCash(1617408000, uint128(normalizedCashApr));
         currentCashtofCashJuly = notional.getCurrentCashTofCash(1625184000, uint128(normalizedCashJul));
 
-        fCashApr = notional.getCurrentCashTofCash(1617408000, uint128(amount));
-        fCashJul = notional.getCurrentCashTofCash(1625184000, uint128(amount));
+        fCashApr = notional.getCurrentCashTofCash(1617408000, uint128(daiIn));
+        fCashJul = notional.getCurrentCashTofCash(1625184000, uint128(daiIn));
 
         AprImpliedRate= notional.getMarket(1617408000).lastImpliedRate;
         JulImpliedRate= notional.getMarket(1625184000).lastImpliedRate;
@@ -154,14 +165,17 @@ contract Gravel {
         AnnualAprImpliedRate = AprImpliedRate*(31536000*1e26/timeDiffApr)/1e26;
         AnnualJulImpliedRate = JulImpliedRate*(31536000*1e26/timeDiffJul)/1e26;
 
-        NotExpectedAprReturn = (AprImpliedRate*amount);
-        NotExpectedJulReturn = (JulImpliedRate*amount);
+        NotExpectedAprReturn = (AprImpliedRate*daiIn);
+        NotExpectedJulReturn = (JulImpliedRate*daiIn);
 
         (notionalAprSelect, bestNotional) = (currentCashtofCashApril>currentCashtofCashJuly? (true, currentCashtofCashApril):( false, currentCashtofCashJuly));
         // NOAPR, = 1
         // NOJUL, = 2
         // YIMAR, = 3
         // YIJUN  = 4
+
+
+        //	function approve(address, uint) virtual external returns (bool);
         if (notionalAprSelect)
         {
             if(bestNotional<normalizedCashApr)
@@ -169,16 +183,26 @@ contract Gravel {
                 if (yieldMarSelect)
                 {
                     bestYield = 3;
+                    _erc20.approve(0x08cc239a994A10118CfdeEa9B849C9c674C093d3,daiIn);
+                    Yield yield = Yield(0x08cc239a994A10118CfdeEa9B849C9c674C093d3);
+                    yield.sellDai(address(this),msg.sender, daiIn);
+
                 }
                 else
                 {
                     bestYield = 4;
+                    _erc20.approve(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA,daiIn);
+                    Yield yield = Yield(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA);
+                    yield.sellDai(address(this),msg.sender, daiIn);
                 }
 
             }
+            //takefCash(uint32 maturity, uint128 fCashAmount, uint32 maxTime, uint128 minImpliedRate)
             else
             {
                 bestYield = 1;
+                _erc20.approve(0x3433B2771523d2B57Ae1BC59810F235d6C0093e9, daiIn);
+                notional.takefCash(1617408000, daiIn, uint32(block.timestamp), uint128(AprImpliedRate));
 
             }
 
@@ -190,16 +214,25 @@ contract Gravel {
                 if (yieldMarSelect)
                 {
                     bestYield = 3;
+                    _erc20.approve(0x08cc239a994A10118CfdeEa9B849C9c674C093d3,daiIn);
+                    Yield yield = Yield(0x08cc239a994A10118CfdeEa9B849C9c674C093d3);
+                    yield.sellDai(address(this),msg.sender, daiIn);
                 }
                 else
                 {
                     bestYield = 4;
+                    _erc20.approve(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA,daiIn);
+                    Yield yield = Yield(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA);
+                    yield.sellDai(address(this),msg.sender, daiIn);
+
                 }
 
             }
             else
             {
                 bestYield = 2;
+                _erc20.approve(0x3433B2771523d2B57Ae1BC59810F235d6C0093e9, daiIn);
+                notional.takefCash(1625184000, daiIn, uint32(block.timestamp), uint128(AprImpliedRate));
             }
         }
 
@@ -250,6 +283,20 @@ contract Gravel {
 
         return yield21Jun30AnnualizedYield;
 
+    }
+    function sellDaiTest(uint128 daiIn) public returns(uint128){
+        daiIn = daiIn*1e18;
+
+        Erc20 _erc20 = Erc20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
+
+        _erc20.transferFrom(msg.sender, address(this), daiIn);
+
+        _erc20.approve(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA, daiIn);
+
+        Yield yield = Yield(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA);
+        returnme = yield.sellDai(address(this),msg.sender, daiIn);
+
+        return returnme;
     }
 
 }

@@ -17,6 +17,10 @@ import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 import { TwoCards } from "./TwoCards";
 import Charts from "./Charts";
 
+import swivel from '../img/logo.png';
+import notional from '../img/notional.png';
+import yieldImg from '../img/yield.png';
+
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
 // to use when deploying to other networks.
@@ -33,10 +37,10 @@ const AAVE_LENDING_POOL_ADDRESS = "0x580D4Fdc4BF8f9b5ae2fb9225D584fED4AD5375c";
 const AAVE_LENDING_POOL_PROVIDER_ADDRESS = "0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5";
 const AAVE_DAI_ADDRESS = "0xff795577d9ac8bd7d90ee22b6c1703490b6512fd";
 const STAKE_TOKEN_ADDRESS = "0x2610C11aB6f7DCa1d8915f328c6995E0c16f5d94";
-const DAI_ADDRESS = "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa"
+const DAI_ADDRESS = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa"
 //Simplest Gravel Contract: 0x538b8BABECaFe0e81380E53112597E0f8E07D5d5
 //Gravel with Rates: 0xa9b11DD46439316e6CBd04Aaf670C97cEbc4aD96
-const GRAVEL_ADDRESS = "0xa9b11DD46439316e6CBd04Aaf670C97cEbc4aD96";
+const GRAVEL_ADDRESS = "0x62c40e4FAd9D87eE582de0209346f612DbD83213";
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
@@ -66,7 +70,7 @@ export class Dapp extends React.Component {
       menuTab: "1",
       timeLeftForUnlock: undefined,
       fundsForUnlock: undefined,
-      bestYield: 'Swivel',
+      bestYield: swivel,
       maturity: 'February 2021',
       estAPY: 1,
       estReturn: 0,
@@ -104,9 +108,9 @@ export class Dapp extends React.Component {
     // console.log(`totalAPY is ${this.state.totalAPY}`)
 
     // If the user's data hasn't loaded yet, we show a loading component.
-    if (!this.state.timeLock || !this.state.protCoveredFundsObj || !this.state.totalAPY) {
-      return <Loading />;
-    }
+    // if (!this.state.timeLock || !this.state.protCoveredFundsObj || !this.state.totalAPY) {
+    //   return <Loading />;
+    // }
 
     // If everything is loaded, we render the application.
     return (
@@ -157,6 +161,7 @@ export class Dapp extends React.Component {
               claimFunds={async () =>
                 await this._claimFunds()
               }
+
               // approveDai={async () =>
               //   await this._approveDai()
               // }
@@ -327,21 +332,29 @@ export class Dapp extends React.Component {
   //       YIJUN
   //   }
   async _getBest(amount) {
-    console.log(`In getBest`);
+    //this._provider = new ethers.providers.Web3Provider(window.ethereum);
+    var test =  await window.ethereum.enable();
+    console.log(test[0]);
+    console.log(`In getBest`+test[0]);
     var bestYield;
     var maturity;
     var estAPY;
     var estReturn;
-    var tx =  await this._Gravel.getBest(amount, amount);
+    const approval = await this._Dai.approve(GRAVEL_ADDRESS, constants.MaxUint256);
+    const approvalReceipt = await approval.wait();
+    if (approvalReceipt.status === 0) {
+      throw new Error("Transaction failed");
+    } else {
+
+    var tx =  await this._Gravel.getBest(amount);
     const receipt = await tx.wait();
     if (receipt.status === 0) {
       throw new Error("Transaction failed");
     } else {
-
       bestYield = await this._Gravel.bestYield();
       switch(bestYield){
         case(1):
-          bestYield = "Notional"
+          bestYield = notional
           maturity = "April 2021"
           estReturn = await this._Gravel.NotExpectedAprReturn();
           estReturn = (estReturn-amount)/1e27;
@@ -350,7 +363,7 @@ export class Dapp extends React.Component {
 
           break;
         case(2):
-          bestYield = "Notional"
+          bestYield = notional
           maturity = "July 2021"
           estReturn = await this._Gravel.NotExpectedJulReturn();
           estReturn = (estReturn-amount)/1e27;
@@ -358,7 +371,7 @@ export class Dapp extends React.Component {
           estAPY = parseFloat(estAPY/1e9).toFixed(4);
           break;
         case(3):
-          bestYield = "Yield"
+          bestYield = yieldImg
           maturity = "March 2021"
           estReturn = await this._Gravel.yield21Mar31Return();
           estReturn = (estReturn-amount)/1e18;
@@ -366,7 +379,7 @@ export class Dapp extends React.Component {
           estAPY = parseFloat(estAPY/1e13).toFixed(4);
           break;
         case(4):
-          bestYield = "Yield"
+          bestYield = yieldImg
           maturity = "June 2021"
           estReturn = await this._Gravel.yield21Jun30Return();
           estReturn = (estReturn-amount)/1e18;
@@ -382,6 +395,7 @@ export class Dapp extends React.Component {
       this.setState({bestYield, maturity, estReturn, estAPY});
       return "success"
     }
+  }
 }
   // The next two methods just read from the contract and store the results
   // in the component state.
@@ -480,6 +494,7 @@ export class Dapp extends React.Component {
 
     this.setState({ userStake, totalStakedFunds, totalAPY, daiAaveStrategyFunds, earningsPerMonth });
   }
+
   // async _approveDai() {
   //   try {
   //     console.log(`_approveDai runs`)
