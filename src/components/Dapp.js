@@ -110,9 +110,9 @@ export class Dapp extends React.Component {
     // console.log(`totalAPY is ${this.state.totalAPY}`)
 
     // If the user's data hasn't loaded yet, we show a loading component.
-    // if (!this.state.timeLock || !this.state.protCoveredFundsObj || !this.state.totalAPY) {
-    //   return <Loading />;
-    // }
+    if (!this.state.timeLock || !this.state.protCoveredFundsObj || !this.state.totalAPY) {
+      return <Loading />;
+    }
 
     // If everything is loaded, we render the application.
     return (
@@ -198,6 +198,15 @@ export class Dapp extends React.Component {
           </>
         )}
         </div>
+        <p style={{textAlign:'center', fontSize: 12, marginTop: 100, color: '#C8C8C8' }}>
+            Created for <a href="https://gravel.substack.com/" target="_blank" rel="noopener noreferrer">Gitcoin Kernel Cohort II Fellowship</a>
+            </p>
+            <p style={{textAlign:'center', fontSize: 12, marginTop: -10, color: '#C8C8C8' }}>
+            Developed by: <a href="https://twitter.com/_WillHsieh" target="_blank" rel="noopener noreferrer">Will</a>
+          </p>
+          <p style={{textAlign:'center', fontSize: 12, marginTop: -10, color: '#C8C8C8'}}>
+            Stay tuned for more updates to come!
+          </p>
         </div>
     );
   }
