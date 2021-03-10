@@ -8,6 +8,7 @@ import AAVE_LENDING_POOL_ABI from "../ABIs/LendingPoolABI.json";
 import AAVE_DAI_ABI from "../ABIs/AaveDaiABI.json";
 import STAKE_TOKEN_ABI from "../ABIs/StakeTokenABI.json";
 import GRAVEL_ABI from "../ABIs/GravelABI.json";
+import SWIVEL_ABI from "../ABIs/SwivelABI.json";
 import DAI_ABI from "../ABIs/DaiABI.json";
 import { NoWalletDetected } from "./NoWalletDetected";
 import { ConnectWallet } from "./ConnectWallet";
@@ -38,10 +39,11 @@ const AAVE_LENDING_POOL_PROVIDER_ADDRESS = "0x506B0B2CF20FAA8f38a4E2B524EE43e1f4
 const AAVE_DAI_ADDRESS = "0xff795577d9ac8bd7d90ee22b6c1703490b6512fd";
 const STAKE_TOKEN_ADDRESS = "0x2610C11aB6f7DCa1d8915f328c6995E0c16f5d94";
 const DAI_ADDRESS = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa"
+const DAI_NOT_ADDRESS = "0x181D62Ff8C0aEeD5Bc2Bf77A88C07235c4cc6905"
 //Simplest Gravel Contract: 0x538b8BABECaFe0e81380E53112597E0f8E07D5d5
 //Gravel with Rates: 0xa9b11DD46439316e6CBd04Aaf670C97cEbc4aD96
-const GRAVEL_ADDRESS = "0x62c40e4FAd9D87eE582de0209346f612DbD83213";
-
+//const GRAVEL_ADDRESS = "0x62c40e4FAd9D87eE582de0209346f612DbD83213"; //OG
+const GRAVEL_ADDRESS ="0x7439E254d753216e40c90fde403E4ac920Ce768C";// "0x69965dcb4DE6d38D78275a3091b26CcbdD919c27";//"0x717f8aE047aA1a36E36e8a0e35609AB9Ab564D0e";// "0x000666Bf6D56a02715ca2D4fdf1d26a651309feD";
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
 
@@ -115,13 +117,26 @@ export class Dapp extends React.Component {
     // If everything is loaded, we render the application.
     return (
       <div
+            style={{
+              position: "fixed",
+              zIndex: 2,
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              background: "linear-gradient(#1e212d, #3e404b)",
+            }}
+          >
+      <div
         className="container p-4"
-        style={{ backgroundColor: '#cbd5e0',  borderRadius: 30}}
+        style={{ background: "linear-gradient(to bottom right, #bbcfff, #1e366b)",boxShadow:"-10px 3px 10px black", borderRadius: 30, marginTop:150,
+    width: 1000}}
       >
+
         <div className="row">
           <div className="col-12">
             <h1 style={{ marginBottom: 5 }} >
-              Gravel
+              Illuminate
             </h1>
             <h4 style={{ marginBottom: 25 }} >
               Fixed Yield Aggregator
@@ -182,6 +197,7 @@ export class Dapp extends React.Component {
             />
           </>
         )}
+        </div>
         </div>
     );
   }
@@ -335,6 +351,13 @@ export class Dapp extends React.Component {
     //this._provider = new ethers.providers.Web3Provider(window.ethereum);
     var test =  await window.ethereum.enable();
     console.log(test[0]);
+    // var provider = new ethers.providers.Web3Provider(window.ethereum);
+    //           var signer = provider.getSigner();
+    //           var ethersSwivelContract = new ethers.Contract(GRAVEL_ADDRESS, GRAVEL_ABI, signer);
+    // var provider = new ethers.providers.Web3Provider(window.ethereum);
+    // var signer = provider.getSigner();
+    // var ethersIlluminateContract = new ethers.Contract("0x5C2B864F0890aaDa9D043210b91c62186F0af570", GRAVEL_ABI, signer);
+
     console.log(`In getBest`+test[0]);
     var bestYield;
     var maturity;
@@ -346,29 +369,41 @@ export class Dapp extends React.Component {
       throw new Error("Transaction failed");
     } else {
 
-    var tx =  await this._Gravel.getBest(amount);
+    var order= ["0xa77d78614e959de3a1757a17216fdcfc79542057341c9a79fe3fe8250c9c6702",
+           "0x84b5ce3ea8cdc1b19ea1768f1c4075b6937b483b",
+           "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa",
+           true,
+           "100000000000000000000",
+           "8213200000000000000",
+           "31536000",
+           "1615879257",
+    ];
+    //console.log(Number.MAX_SAFE_INTEGER);
+    //daiIn[0] = ethers.utils.bigNumberify("500000000000000000");
+    amount = (amount * 10000000000000000).toString();
+    var operatorAddress = window.ethereum.selectedAddress;
+    var agreementKey = window._ethers.utils.sha256(ethers.utils.id(Date.now().toString()+operatorAddress));
+
+    var signature = window._ethers.utils.splitSignature("0xe2eaf311e9837a85f97ec658dc3ea3a8b26ac221bcc421b7a7bf768910593a7a7fbc16ccb1277cc89706c501a822b0bfef23f5c43b76b4098f9fc84a5edba8af1c");
+
+    //var tx =  await this._Gravel.SwivelFinanceBatch([order], [daiIn], agreementKey, [[signature.v,signature.r,signature.s]]);
+    //var tx = await ethersSwivelContract.fillFloating(order, daiIn, agreementKey, [signature.v,signature.r,signature.s]);
+    var tx =  await this._Gravel.getBest(amount, [order], [amount], agreementKey, [[signature.v,signature.r,signature.s]]);
     const receipt = await tx.wait();
     if (receipt.status === 0) {
       throw new Error("Transaction failed");
     } else {
-      bestYield = await this._Gravel.bestYield();
+      //bestYield = await this._Gravel.bestYield()//notionalTest();
       switch(bestYield){
         case(1):
-          bestYield = notional
-          maturity = "April 2021"
-          estReturn = await this._Gravel.NotExpectedAprReturn();
-          estReturn = (estReturn-amount)/1e27;
-          estAPY = await this._Gravel.AnnualAprImpliedRate();
+          bestYield = swivel
+          maturity = "Uh"
+          estAPY = await this._Gravel.swivelBestYield();
           estAPY = parseFloat(estAPY/1e9).toFixed(4);
+          //duration/year * apy*principal
+          estReturn = await this._Gravel.swivelBestYield();
+          estReturn = (order[6]/31536000)*estAPY*amount;
 
-          break;
-        case(2):
-          bestYield = notional
-          maturity = "July 2021"
-          estReturn = await this._Gravel.NotExpectedJulReturn();
-          estReturn = (estReturn-amount)/1e27;
-          estAPY = await this._Gravel.AnnualJulImpliedRate();
-          estAPY = parseFloat(estAPY/1e9).toFixed(4);
           break;
         case(3):
           bestYield = yieldImg

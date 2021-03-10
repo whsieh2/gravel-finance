@@ -5,6 +5,85 @@
 				"internalType": "uint128",
 				"name": "daiIn",
 				"type": "uint128"
+			},
+			{
+				"components": [
+					{
+						"internalType": "bytes32",
+						"name": "key",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "maker",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "underlying",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "floating",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "principal",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "interest",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "duration",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "expiry",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Hash.Order[]",
+				"name": "o",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "orderVolume",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "agreementKey",
+				"type": "bytes32"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint8",
+						"name": "v",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "r",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "s",
+						"type": "bytes32"
+					}
+				],
+				"internalType": "struct Sig.Components[]",
+				"name": "c",
+				"type": "tuple[]"
 			}
 		],
 		"name": "getBest",
@@ -32,6 +111,285 @@
 				"internalType": "uint128",
 				"name": "",
 				"type": "uint128"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "bytes32",
+						"name": "key",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "maker",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "underlying",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "floating",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "principal",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "interest",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "duration",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "expiry",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Hash.Order[]",
+				"name": "o",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "orderVolume",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "agreementKey",
+				"type": "bytes32"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint8",
+						"name": "v",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "r",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "s",
+						"type": "bytes32"
+					}
+				],
+				"internalType": "struct Sig.Components[]",
+				"name": "c",
+				"type": "tuple[]"
+			}
+		],
+		"name": "SwivelFinanceBatch",
+		"outputs": [
+			{
+				"internalType": "uint128",
+				"name": "",
+				"type": "uint128"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "bytes32",
+						"name": "key",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "maker",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "underlying",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "floating",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "principal",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "interest",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "duration",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "expiry",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Hash.Order",
+				"name": "o",
+				"type": "tuple"
+			},
+			{
+				"internalType": "uint256",
+				"name": "orderVolume",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "agreementKey",
+				"type": "bytes32"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint8",
+						"name": "v",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "r",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "s",
+						"type": "bytes32"
+					}
+				],
+				"internalType": "struct Sig.Components",
+				"name": "c",
+				"type": "tuple"
+			}
+		],
+		"name": "SwivelFinanceSingle",
+		"outputs": [
+			{
+				"internalType": "uint128",
+				"name": "",
+				"type": "uint128"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "bytes32",
+						"name": "key",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "address",
+						"name": "maker",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "underlying",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "floating",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "principal",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "interest",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "duration",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "expiry",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Hash.Order[]",
+				"name": "o",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "orderVolume",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "agreementKey",
+				"type": "bytes32"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint8",
+						"name": "v",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "r",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "s",
+						"type": "bytes32"
+					}
+				],
+				"internalType": "struct Sig.Components[]",
+				"name": "c",
+				"type": "tuple[]"
+			}
+		],
+		"name": "SwivelYield",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -82,215 +440,7 @@
 	},
 	{
 		"inputs": [],
-		"name": "AnnualAprImpliedRate",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "AnnualJulImpliedRate",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "AprImpliedRate",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "bestYield",
-		"outputs": [
-			{
-				"internalType": "uint32",
-				"name": "",
-				"type": "uint32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "currentCashtofCashApril",
-		"outputs": [
-			{
-				"internalType": "uint128",
-				"name": "",
-				"type": "uint128"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "currentCashtofCashJuly",
-		"outputs": [
-			{
-				"internalType": "uint128",
-				"name": "",
-				"type": "uint128"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "fCashApr",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "fCashJul",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "JulImpliedRate",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "normalizedCashApr",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "normalizedCashJul",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "NotExpectedAprReturn",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "NotExpectedJulReturn",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "notionalAprilBestYield",
-		"outputs": [
-			{
-				"internalType": "uint32",
-				"name": "",
-				"type": "uint32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "notionalAprSelect",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "notionalBestYield",
-		"outputs": [
-			{
-				"internalType": "uint32",
-				"name": "",
-				"type": "uint32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "notionalJulyBestYield",
 		"outputs": [
 			{
 				"internalType": "uint32",
@@ -322,6 +472,32 @@
 				"internalType": "uint128",
 				"name": "",
 				"type": "uint128"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "swivelBestYield",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "swivelReturn",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",

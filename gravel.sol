@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
-
+import './Hash.sol';
+import './Sig.sol';
 
 abstract contract Notional {
     function getCurrentCashTofCash(uint32 maturity, uint128 fCashAmount) external virtual returns (uint128);
@@ -50,6 +51,14 @@ abstract contract Erc1155 {
     function setApprovalForAll(address _operator, bool _approved) virtual external;
 }
 
+abstract contract Swivel{
+    function batchFillFloating( Hash.Order[] calldata o, uint256[] calldata a, bytes32 k, Sig.Components[] calldata c) virtual external;
+    function fillFixed( Hash.Order calldata o, uint256 a, bytes32 k, Sig.Components calldata c) virtual external;
+    function fillFloating( Hash.Order calldata o, uint256 a, bytes32 k, Sig.Components calldata c) virtual external;
+
+
+}
+
 contract Gravel {
     //Contract address goes into the () below. Main next
     // Notional notional = Notional(0x307885bb78D490cF9198D678F8B2D1058D741F93);
@@ -60,9 +69,6 @@ contract Gravel {
 
 
     }
-
-    uint128 public currentCashtofCashApril;
-    uint128 public currentCashtofCashJuly;
 
     uint128 public yield21Mar31Return;
     uint128 public yield21Jun30Return;
@@ -77,36 +83,19 @@ contract Gravel {
     uint256 public yieldJunBestYield;
     uint256 public yieldMarBestYield;
 
-    uint32 public notionalBestYield;
-
+    uint256 public swivelBestYield;
+    uint256 public swivelReturn;
     uint32 public bestYield;
-
-    uint32 public notionalAprilBestYield;
-    uint32 public notionalJulyBestYield;
 
     uint256 public yield21Jun30Yield;
     uint256 public yield21Mar31Yield;
 
     //If True, earlier maturity is the higher yield, else the latter.
-    bool public notionalAprSelect;
     bool public yieldMarSelect;
     //If True, yield is best; else notional
     bool public yieldIsBest;
 
-    uint256 public normalizedCashApr;
-    uint256 public normalizedCashJul;
-
-    uint256 public fCashApr;
-    uint256 public fCashJul;
-
-    uint256 public AprImpliedRate;
-    uint256 public JulImpliedRate;
-
-    uint256 public AnnualAprImpliedRate;
-    uint256 public AnnualJulImpliedRate;
-
-    uint256 public NotExpectedAprReturn;
-    uint256 public NotExpectedJulReturn;
+    bool bestSelect;
     enum best{
         NOAPR,
         NOJUL,
@@ -124,22 +113,11 @@ contract Gravel {
     // Step 4. getCurrentCashTofCash(value)
     // Step 5. if return < principal, Yield > notional
     //NA:2.55%, NJ:10%, YM:7.5%. YJ:6.50%
-    function getBest(uint128 daiIn) public returns(uint32){
+    function getBest(uint128 daiIn,Hash.Order[] calldata o, uint256[] calldata orderVolume, bytes32 agreementKey, Sig.Components[] calldata c) public returns(uint32){
         bestYield = 0;
-
-        daiIn = daiIn*1e18;
-
 
         Erc20 _erc20 = Erc20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
         _erc20.transferFrom(msg.sender, address(this), daiIn);
-
-        uint256 timeDiffApr =  1617408000 - block.timestamp;
-        uint256 timeDiffJul =  1625184000 - block.timestamp;
-
-        //Notional Maturity with best APY
-        uint256 bestNotional;
-
-        Notional notional = Notional(0x3433B2771523d2B57Ae1BC59810F235d6C0093e9);
 
         yieldMarBestYield = yieldMar(daiIn);
         yieldJunBestYield = yieldJun(daiIn);
@@ -147,93 +125,31 @@ contract Gravel {
         //get best Yield's yield
         (yieldMarSelect, yieldBestYield) = (yieldMarBestYield>yieldJunBestYield ? (true, yieldMarBestYield):(false, yieldJunBestYield));
 
-        //Notional Principle*(Notional Remaining Maturity) * (Yield's Yield/Second)
-        normalizedCashApr = ((daiIn*timeDiffApr)*(yieldBestYield/1e11)*1e26/31536000)/1e26;
-        normalizedCashJul = ((daiIn*timeDiffJul)*(yieldBestYield/1e11)*1e26/31536000)/1e26;
+        swivelBestYield = SwivelYield(o, orderVolume, agreementKey, c);
 
-        //Step 4. getCurrentCashTofCash(value)
-
-        currentCashtofCashApril = notional.getCurrentCashTofCash(1617408000, uint128(normalizedCashApr));
-        currentCashtofCashJuly = notional.getCurrentCashTofCash(1625184000, uint128(normalizedCashJul));
-
-        fCashApr = notional.getCurrentCashTofCash(1617408000, uint128(daiIn));
-        fCashJul = notional.getCurrentCashTofCash(1625184000, uint128(daiIn));
-
-        AprImpliedRate= notional.getMarket(1617408000).lastImpliedRate;
-        JulImpliedRate= notional.getMarket(1625184000).lastImpliedRate;
-
-        AnnualAprImpliedRate = AprImpliedRate*(31536000*1e26/timeDiffApr)/1e26;
-        AnnualJulImpliedRate = JulImpliedRate*(31536000*1e26/timeDiffJul)/1e26;
-
-        NotExpectedAprReturn = (AprImpliedRate*daiIn);
-        NotExpectedJulReturn = (JulImpliedRate*daiIn);
-
-        (notionalAprSelect, bestNotional) = (currentCashtofCashApril>currentCashtofCashJuly? (true, currentCashtofCashApril):( false, currentCashtofCashJuly));
-        // NOAPR, = 1
-        // NOJUL, = 2
-        // YIMAR, = 3
-        // YIJUN  = 4
+        bestSelect = (yieldBestYield>swivelBestYield? true:false);
 
 
-        //	function approve(address, uint) virtual external returns (bool);
-        if (notionalAprSelect)
-        {
-            if(bestNotional<normalizedCashApr)
+        if(bestSelect){
+            if (yieldMarSelect)
             {
-                if (yieldMarSelect)
-                {
-                    bestYield = 3;
-                    _erc20.approve(0x08cc239a994A10118CfdeEa9B849C9c674C093d3,daiIn);
-                    Yield yield = Yield(0x08cc239a994A10118CfdeEa9B849C9c674C093d3);
-                    yield.sellDai(address(this),msg.sender, daiIn);
-
-                }
-                else
-                {
-                    bestYield = 4;
-                    _erc20.approve(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA,daiIn);
-                    Yield yield = Yield(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA);
-                    yield.sellDai(address(this),msg.sender, daiIn);
-                }
+                bestYield = 3;
+                _erc20.approve(0x08cc239a994A10118CfdeEa9B849C9c674C093d3,daiIn);
+                Yield yield = Yield(0x08cc239a994A10118CfdeEa9B849C9c674C093d3);
+                yield.sellDai(address(this),msg.sender, daiIn);
 
             }
-            //takefCash(uint32 maturity, uint128 fCashAmount, uint32 maxTime, uint128 minImpliedRate)
             else
             {
-                bestYield = 1;
-                _erc20.approve(0x3433B2771523d2B57Ae1BC59810F235d6C0093e9, daiIn);
-                notional.takefCash(1617408000, daiIn, uint32(block.timestamp), uint128(AprImpliedRate));
-
+                bestYield = 4;
+                _erc20.approve(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA,daiIn);
+                Yield yield = Yield(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA);
+                yield.sellDai(address(this),msg.sender, daiIn);
             }
-
         }
-        else
-        {
-            if(bestNotional<normalizedCashJul)
-            {
-                if (yieldMarSelect)
-                {
-                    bestYield = 3;
-                    _erc20.approve(0x08cc239a994A10118CfdeEa9B849C9c674C093d3,daiIn);
-                    Yield yield = Yield(0x08cc239a994A10118CfdeEa9B849C9c674C093d3);
-                    yield.sellDai(address(this),msg.sender, daiIn);
-                }
-                else
-                {
-                    bestYield = 4;
-                    _erc20.approve(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA,daiIn);
-                    Yield yield = Yield(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA);
-                    yield.sellDai(address(this),msg.sender, daiIn);
-
-                }
-
-            }
-            else
-            {
-                bestYield = 2;
-                _erc20.approve(0x3433B2771523d2B57Ae1BC59810F235d6C0093e9, daiIn);
-                notional.takefCash(1625184000, daiIn, uint32(block.timestamp), uint128(AprImpliedRate));
-            }
+        else{
+            bestYield = 1;
+            SwivelFinanceBatch(o, orderVolume, agreementKey, c);
         }
 
         return bestYield;
@@ -285,18 +201,86 @@ contract Gravel {
 
     }
     function sellDaiTest(uint128 daiIn) public returns(uint128){
-        daiIn = daiIn*1e18;
 
         Erc20 _erc20 = Erc20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
 
+        _erc20.approve(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA, daiIn);
+
         _erc20.transferFrom(msg.sender, address(this), daiIn);
 
-        _erc20.approve(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA, daiIn);
 
         Yield yield = Yield(0xe10dEe848fD3Cf7eAC7Da5c59a5060d99Efd93BA);
         returnme = yield.sellDai(address(this),msg.sender, daiIn);
 
         return returnme;
+    }
+
+
+    //Hash.Order[] calldata o, uint256[] calldata a, bytes32 k, Sig.Components[] calldata c
+    function SwivelFinanceBatch(Hash.Order[] calldata o, uint256[] calldata orderVolume, bytes32 agreementKey, Sig.Components[] calldata c) public returns(uint128){
+
+        uint256 daiInSum = 0;
+        //Swivel.sol contract address
+        Swivel swivel = Swivel(0x33E17F512a509D592a484BfD34B1B6feD5815658);
+
+        Erc20 _erc20 = Erc20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
+
+        for (uint256 i =0; i< orderVolume.length; i++){
+            daiInSum += orderVolume[i];
+        }
+
+        _erc20.approve(0x33E17F512a509D592a484BfD34B1B6feD5815658, daiInSum);
+
+
+        //a = daiIn
+        swivel.batchFillFloating(o, orderVolume, agreementKey, c);
+
+        return 0;
+
+    }
+    //Hash.Order calldata o, uint256 a, bytes32 k, Sig.Components[] calldata c
+    function SwivelFinanceSingle(Hash.Order calldata o, uint256 orderVolume, bytes32 agreementKey, Sig.Components calldata c) public returns(uint128){
+
+    //Swivel.sol contract address
+    Swivel swivel = Swivel(0x33E17F512a509D592a484BfD34B1B6feD5815658);
+
+    Erc20 _erc20 = Erc20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
+
+
+    _erc20.transferFrom(msg.sender, address(this), orderVolume);
+
+     _erc20.approve(0x33E17F512a509D592a484BfD34B1B6feD5815658, orderVolume);
+
+
+    //a = daiIn
+    swivel.fillFloating(o, orderVolume, agreementKey, c);
+
+    return 0;
+
+    }
+    function SwivelYield(Hash.Order[] calldata o, uint256[] calldata orderVolume, bytes32 agreementKey, Sig.Components[] calldata c) public returns(uint256){
+        //Swivel.sol contract address
+        //wivel swivel = Swivel(0x33E17F512a509D592a484BfD34B1B6feD5815658);
+        uint256 effective_rate = 0;
+
+        for (uint256 i = 0; i <o.length; i++)
+        {
+
+            //rate = ((o[i].interest*1e26)/o[i].principal)/1e21;
+            //annualized_rate = (rate*31536000*1e26/(o[i].duration))/1e15;
+            uint256 rate;
+            {
+                rate = ((o[i].interest*1e26)/o[i].principal)/1e21;
+            }
+            uint256 annualized_rate;
+            {
+                annualized_rate = (rate*31536000*1e26/(o[i].duration))/1e15;
+            }
+            effective_rate += annualized_rate;
+
+        }
+        effective_rate = effective_rate/10;
+        return effective_rate;
     }
 
 }

@@ -117,8 +117,9 @@ export function TwoCards({
 
           <Card
             className="leftCard"
-            style={{ backgroundColor: '#e2e8f0',  borderRadius: 30}}
-            bordered={true}
+            style={{ background: "linear-gradient(to bottom right,#557bcf,  #bbcfff)",
+            borderRadius: 30, boxShadow:"-10px 3px 10px #3e404b" }}
+            bordered={false}
           >
             <h4 style={{textAlign:'center'}}>Expected Return</h4>
             <p style={{textAlign:'left', margin:40}}>
@@ -150,18 +151,18 @@ export function TwoCards({
           </Card>
           <Card
             className="rightCard"
-            style={{ backgroundColor: '#e2e8f0', borderRadius: 30 }}
-            bordered={true}
+            style={{ background: "linear-gradient(to bottom right,#557bcf,  #bbcfff)", borderRadius: 30, boxShadow:"-10px 3px 10px #3e404b" }}
+            bordered={false}
           >
             <h4 style={{textAlign:'center'}}>Lending Protocols</h4>
             <p style={{textAlign:'center', margin:55}}>
-              <b><a href="https://notional.finance/" target="_blank"><img src={notional} width = "175px"></img></a></b>
+              <b><a href="https://swivel.finance/" target="_blank"><img src={swivel} width = "150px"></img></a></b>
             </p>
             <p style={{textAlign:'center', margin:40}}>
               <b><a href="https://yield.is/" target="_blank"><img src={yieldImg} width = "125px"></img></a></b>
             </p>
             <p style={{textAlign:'center', margin:40}}>
-              <b><a href="https://swivel.finance/" target="_blank"><img src={swivel} width = "150px"></img></a></b>
+              <b><a href="https://notional.finance/" target="_blank"><img src={notional} width = "175px"></img></a></b>
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 25}}>
               <InputNumber style={{ height: 32 }} min={0} defaultValue={0} onChange={handleNumberChange} />
@@ -178,7 +179,7 @@ export function TwoCards({
                 }}
                 onClick={getBestYield}
               >
-                Lending Amount
+                Fixed Order
               </Button>
             </div>
           </Card>
