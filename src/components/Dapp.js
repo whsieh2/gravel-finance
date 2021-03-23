@@ -72,9 +72,9 @@ export class Dapp extends React.Component {
       menuTab: "1",
       timeLeftForUnlock: undefined,
       fundsForUnlock: undefined,
-      bestYield: swivel,
-      maturity: 'February 2021',
-      estAPY: 1,
+      bestYield: undefined,
+      maturity: 'April 2021',
+      estAPY: 0,
       estReturn: 0,
     };
 
@@ -378,40 +378,43 @@ export class Dapp extends React.Component {
       throw new Error("Transaction failed");
     } else {
 
-    var order= ["0xa77d78614e959de3a1757a17216fdcfc79542057341c9a79fe3fe8250c9c6702",
+    var order= ["0xf23d5eadb3cbce9354f332bd018b88adbd795c636b9d3b2cd4a5dcaac923dffe",
            "0x84b5ce3ea8cdc1b19ea1768f1c4075b6937b483b",
            "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa",
            true,
            "100000000000000000000",
            "8213200000000000000",
            "31536000",
-           "1615879257",
+           "1628522006",
     ];
     //console.log(Number.MAX_SAFE_INTEGER);
     //daiIn[0] = ethers.utils.bigNumberify("500000000000000000");
-    amount = (amount * 10000000000000000).toString();
+    amount = (amount * 1000000000000000000).toString();
+    var options = {gasLimit:1000000};
     var operatorAddress = window.ethereum.selectedAddress;
     var agreementKey = window._ethers.utils.sha256(ethers.utils.id(Date.now().toString()+operatorAddress));
 
-    var signature = window._ethers.utils.splitSignature("0xe2eaf311e9837a85f97ec658dc3ea3a8b26ac221bcc421b7a7bf768910593a7a7fbc16ccb1277cc89706c501a822b0bfef23f5c43b76b4098f9fc84a5edba8af1c");
+    var signature = window._ethers.utils.splitSignature("0x1f6f7c64ce58b1f0ff3ad5436ab42f29434726a87b61f1d6d08b032cbda22fba2a3efa251fd5c979d1c8ed16a5005765127dba2078d43f0c92fb2e49503b96ee1c");
 
     //var tx =  await this._Gravel.SwivelFinanceBatch([order], [daiIn], agreementKey, [[signature.v,signature.r,signature.s]]);
     //var tx = await ethersSwivelContract.fillFloating(order, daiIn, agreementKey, [signature.v,signature.r,signature.s]);
-    var tx =  await this._Gravel.getBest(amount, [order], [amount], agreementKey, [[signature.v,signature.r,signature.s]]);
+    var tx =  await this._Gravel.getBest(amount, [order], [amount], agreementKey, [[signature.v,signature.r,signature.s]], options);
     const receipt = await tx.wait();
     if (receipt.status === 0) {
       throw new Error("Transaction failed");
     } else {
-      //bestYield = await this._Gravel.bestYield()//notionalTest();
+      bestYield = await this._Gravel.bestYield()//notionalTest();
       switch(bestYield){
         case(1):
-          bestYield = swivel
-          maturity = "Uh"
-          estAPY = await this._Gravel.swivelBestYield();
-          estAPY = parseFloat(estAPY/1e9).toFixed(4);
+          console.log("heh");
+          bestYield = swivel;
+          maturity = "March 2022";
+          //estAPY = await this._Gravel.swivelBestYield();
+          console.log(estAPY);
+          estAPY = "0.08212";
           //duration/year * apy*principal
-          estReturn = await this._Gravel.swivelBestYield();
-          estReturn = (order[6]/31536000)*estAPY*amount;
+          //estReturn = await this._Gravel.swivelBestYield();
+          estReturn = amount*1.08212/1000000000000000000;//(order[6]/31536000)*estAPY*amount;
 
           break;
         case(3):
